@@ -102,6 +102,19 @@ nicht live pro Anfrage abgerufen.
   dürfen nicht addiert werden. Für Kosten von Ländern und Kommunen gibt es keine amtliche Gesamtzahl.
   Staatsangehörigkeit ≠ Fluchtstatus.
 
+## `public/data/fakten.json` – Fakten & Kuriositäten
+
+Einzelwerte ohne maschinenlesbare Quelle, von Hand in `scripts/build_fakten.py` gepflegt. Jede Karte
+führt ihre Quellen mit URL (meist Bundestagsdrucksachen, hib-Meldungen, Wissenschaftliche Dienste,
+Bundesfinanzministerium, Bundesrechnungshof, Destatis). Presseberichte und Verbandsangaben sind als
+solche markiert. Beträge in Mio. EUR. Stand der Recherche: 25.11.2026.
+
+Wichtige Einschränkungen:
+- Tankrabatte 2026: Steuerausfälle sind Schätzungen aus den Gesetzentwürfen (Drs. 21/5321, 21/8157).
+  Für den 2. Rabatt nennt die Bundesregierung einen Länderanteil von 1,25 Mrd. €, die Drucksache nicht.
+- Ahrtal: 5,84 Mrd. € Abfluss bis 31.12.2025 (WD 4 - 009/26); 6,2 Mrd. € Mitte 2026 nur per Pressebericht.
+- Energiekrise: Ausgaben je Maßnahme aus einem dpa-Bericht über eine BMF-Antwort (nicht veröffentlicht).
+
 ## Bundesländer einzeln (noch offen)
 
 Destatis GENESIS (Tabellen 713xx, Jahresrechnungs-/Kassenstatistik) braucht für den Abruf ein

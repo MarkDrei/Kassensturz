@@ -97,5 +97,17 @@ export function render(root, { data }) {
         h("li", {}, "Schätzung des gesamten Erbvolumens (nur als Einordnung, keine amtliche Zahl): ", a("https://www.diw.de/de/diw_01.c.560993.de/in_deutschland_werden_zwischen_2012_und_2027_bis_zu_400_milliarden_euro_pro_jahr_verschenkt_und_vererbt_werden_gut_ein_viertel_mehr_als_bisher_angenommen.html", "DIW Wochenbericht 27/2017"), "."),
       ),
     ),
+    h(
+      "section",
+      { class: "card prose" },
+      h("h2", {}, "Fakten & Kuriositäten"),
+      h(
+        "p",
+        {},
+        "Einzelwerte, von Hand aus amtlichen Dokumenten übernommen (Stand ",
+        data.fakten.updated,
+        "). Jede Karte nennt ihre Quellen direkt; wo nur Presseberichte oder Verbände Zahlen liefern, ist das dort vermerkt. Die Einordnung „je Einwohner“ und „Anteil an den Bundesausgaben“ nutzt die Bevölkerung (Eurostat) und den Haushaltsplan des Bundes im jeweiligen Jahr.",
+      ),
+    ),
   );
 }

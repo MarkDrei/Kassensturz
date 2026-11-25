@@ -29,6 +29,7 @@ python3 scripts/fetch_bundeshaushalt.py  # -> public/data/bund.json (dauert eini
 python3 scripts/fetch_sozialbudget.py    # -> public/data/sozial.json
 python3 scripts/fetch_vermoegen.py       # -> public/data/vermoegen.json
 python3 scripts/fetch_flucht.py          # -> public/data/flucht.json (PDF-Tabellen sind im Skript übertragen)
+python3 scripts/build_fakten.py          # -> public/data/fakten.json (von Hand gepflegte Einzelfakten)
 ```
 Alle Quellen, Datensätze und Einschränkungen stehen in [SOURCES.md](SOURCES.md).
 
