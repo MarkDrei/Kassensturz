@@ -12,7 +12,7 @@ Idea note (Knowledge Vault): "Idee: Interaktive Übersicht Staatsfinanzen Deutsc
 ## Deployment contract (VPS platform, do not change without the orchestrator)
 - `Dockerfile` at the repo root builds the image; the container must listen on `0.0.0.0:3000` (`PORT` env).
 - Push to `main` = live deploy to https://kassensturz.ironstrike.de (public, no auth).
-  Other branches = preview `<branch-slug>.kassensturz.ironstrike.de` (max 3). Work on branches, merge to main.
+  Other branches = preview `<branch-slug>.kassensturz.ironstrike.de` (max 3). Default: work and push directly on `main`; use a branch only for bigger or risky changes.
 - No database. RAM on the VPS is tight: keep the runtime small (target well below 150 MB), no headless
   browsers or heavy build steps at runtime, keep the image small.
 - Deploy logs: https://deploy.ironstrike.de/dashboard
