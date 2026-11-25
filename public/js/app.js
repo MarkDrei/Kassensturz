@@ -3,9 +3,11 @@ import { h, setBase, disposeCharts, resetColorMemo } from "./lib.js";
 import * as staat from "./views/staat.js";
 import * as bund from "./views/bund.js";
 import * as schulden from "./views/schulden.js";
+import * as sozial from "./views/sozial.js";
+import * as vermoegen from "./views/vermoegen.js";
 import * as quellen from "./views/quellen.js";
 
-const ROUTES = { staat, bund, schulden, quellen };
+const ROUTES = { staat, bund, sozial, schulden, vermoegen, quellen };
 const main = document.getElementById("main");
 let data = null;
 
@@ -46,8 +48,8 @@ function render() {
 
 async function boot() {
   try {
-    const [st, bu] = await Promise.all(["data/staat.json", "data/bund.json"].map((u) => fetch(u).then((r) => (r.ok ? r.json() : Promise.reject(new Error(u))))));
-    data = { staat: st, bund: bu };
+    const [st, bu, so, ve] = await Promise.all(["data/staat.json", "data/bund.json", "data/sozial.json", "data/vermoegen.json"].map((u) => fetch(u).then((r) => (r.ok ? r.json() : Promise.reject(new Error(u))))));
+    data = { staat: st, bund: bu, sozial: so, vermoegen: ve };
     setBase(st);
     render();
   } catch (e) {

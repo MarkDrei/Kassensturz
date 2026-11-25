@@ -6,6 +6,6 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "data": "python3 scripts/fetch_eurostat.py && python3 scripts/fetch_bundeshaushalt.py"
+    "data": "python3 scripts/fetch_eurostat.py && python3 scripts/fetch_bundeshaushalt.py && python3 scripts/fetch_sozialbudget.py && python3 scripts/fetch_vermoegen.py"
   }
 }

@@ -7,7 +7,7 @@ S1312 Länder, S1313 Gemeinden, S1314 Sozialversicherung.
 
 Datasets (Eurostat dissemination API, https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/):
   gov_10a_main   revenue / expenditure by economic type (Mio EUR)
-  gov_10a_exp    expenditure by function, COFOG level I + II (Mio EUR)
+  gov_10a_exp    expenditure by function, COFOG level I + II (Mio EUR), also split by economic type
   gov_10dd_edpt1 Maastricht debt, deficit (Mio EUR)
   gov_10q_ggdebt quarterly debt by sub-sector; Q4 value is used for sub-sector years missing in edpt1
   nama_10_gdp    GDP current prices, real growth, deflator
@@ -86,6 +86,9 @@ def main():
     ]
     main_d = fetch("gov_10a_main", unit="MIO_EUR", sector=SECTORS, na_item=MAIN_ITEMS)
     exp_d = fetch("gov_10a_exp", unit="MIO_EUR", sector=SECTORS, na_item="TE")
+    # the same COFOG areas split by economic type (Geldleistungen, Personal, ...); their sum equals TE
+    ART_ITEMS = ["D1", "P2", "D29_D5_D8", "D3", "D4", "D62", "D632", "D7", "D9", "P5", "NP"]
+    art_d = fetch("gov_10a_exp", unit="MIO_EUR", sector=SECTORS, na_item=ART_ITEMS)
     debt_d = fetch("gov_10dd_edpt1", unit="MIO_EUR", sector=SECTORS,
                    na_item=["GD", "GD_F2", "GD_F31", "GD_F32", "GD_F41", "GD_F42"])
     qdebt_d = fetch("gov_10q_ggdebt", unit="MIO_EUR", sector=SECTORS[1:], na_item="GD")
@@ -94,6 +97,7 @@ def main():
 
     main_rows, main_lab, main_upd = parse(main_d)
     exp_rows, exp_lab, exp_upd = parse(exp_d)
+    art_rows, art_lab, _ = parse(art_d)
     debt_rows, debt_lab, debt_upd = parse(debt_d)
     qdebt_rows, _, qdebt_upd = parse(qdebt_d)
     gdp_rows, _, gdp_upd = parse(gdp_d)
@@ -104,6 +108,10 @@ def main():
 
     main = nest(series(main_rows, years, lambda d: (d["sector"], d["na_item"])))
     cofog = nest(series(exp_rows, years, lambda d: (d["sector"], d["cofog99"])))
+    cofog_art = {}
+    for (sec, cf, it), arr in series(art_rows, years, lambda d: (d["sector"], d["cofog99"], d["na_item"])).items():
+        if cf != "TOTAL" and any(v for v in arr):
+            cofog_art.setdefault(sec, {}).setdefault(cf, {})[it] = arr
     debt = nest(series(debt_rows, years, lambda d: (d["sector"], d["na_item"])))
     q4 = [({**d, "time": d["time"][:4]}, v) for d, v in qdebt_rows if d["time"].endswith("Q4")]
     q4 = series(q4, years, lambda d: d["sector"])
@@ -138,10 +146,12 @@ def main():
         "labels": {
             "na_item": {k: main_lab["na_item"].get(k, k) for k in MAIN_ITEMS},
             "cofog": exp_lab["cofog99"],
+            "cofogArt": {k: art_lab["na_item"].get(k, k) for k in ART_ITEMS},
             "debt": debt_lab["na_item"],
         },
         "main": main,
         "cofog": cofog,
+        "cofogArt": cofog_art,
         "debt": debt,
         "gdp": gdp["CP_MEUR"],
         "gdpGrowth": gdp["CLV_PCH_PRE"],

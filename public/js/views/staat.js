@@ -1,4 +1,5 @@
 // View "Gesamtstaat": income and spending of general government and its levels (Eurostat, ESA 2010).
+import { COFOG_SHORT, COFOG_DESC, ART_LABEL, ART_DESC, ART_ORDER } from "../cofog.js";
 import { h, conv, fmt, pct, kpi, change, seg, yearPicker, unitPicker, field, drill, timeChart, theme, UNITS } from "../lib.js";
 
 export const title = "Gesamtstaat";
@@ -38,6 +39,25 @@ function getter(S, sector, year) {
   return (k) => (i < 0 ? null : (m[k]?.[i] ?? null));
 }
 
+// Who pays out social benefits (only for the consolidated state; benefits go to households, so the levels add up exactly).
+const LEVEL_D62 = {
+  S1314: ["Sozialversicherung", "Renten der gesetzlichen Rentenversicherung, Arbeitslosengeld, Krankengeld, Pflegegeld, Unfallrenten."],
+  S1312: ["Länder", "Vor allem Pensionen der Landesbeamten (Lehrkräfte, Polizei, Verwaltung)."],
+  S1311: ["Bund", "U. a. Bürgergeld, Pensionen der Bundesbeamten und Soldaten, Elterngeld."],
+  S1313: ["Gemeinden", "U. a. Sozialhilfe, Grundsicherung im Alter, Unterkunftskosten beim Bürgergeld, Leistungen für Asylbewerber."],
+};
+const LEVEL_D632 = {
+  S1314: ["Sozialversicherung", "Vor allem Kranken- und Pflegekassen: Arztbehandlung, Krankenhaus, Arzneimittel, Pflege."],
+  S1313: ["Gemeinden", "U. a. Eingliederungshilfe für Menschen mit Behinderung, Hilfe zur Pflege, Jugendhilfe."],
+  S1312: ["Länder", ""],
+  S1311: ["Bund", ""],
+};
+function byLevel(S, item, year, sector, map) {
+  if (sector !== "S13") return [];
+  const i = S.years.indexOf(year);
+  return Object.entries(map).map(([sec, [label, desc]]) => Object.assign(N(item + ":" + sec, label, S.main[sec]?.[item]?.[i] ?? null), desc ? { desc } : {}));
+}
+
 /** Expenditure by economic type (ESA). */
 function treeArt(S, sector, year) {
   const g0 = getter(S, sector, year);
@@ -45,10 +65,17 @@ function treeArt(S, sector, year) {
   if (TE == null) return null;
   const g = (k) => g0(k) ?? 0;
   const kids = [
-    N("soz", "Sozialleistungen", g("D62PAY") + g("D632PAY"), [
-      N("D62PAY", "Geldleistungen (Renten, Pensionen, Arbeitslosen-, Kinder-, Bürgergeld …)", g("D62PAY")),
-      N("D632PAY", "Sachleistungen (z. B. Arzt-, Klinik- und Pflegeleistungen der Kassen)", g("D632PAY")),
-    ]),
+    Object.assign(
+      N("soz", "Sozialleistungen", g("D62PAY") + g("D632PAY"), [
+        Object.assign(N("D62PAY", "Geldleistungen (Renten, Pensionen, Arbeitslosen-, Kinder-, Bürgergeld …)", g("D62PAY"), byLevel(S, "D62PAY", year, sector, LEVEL_D62)), {
+          desc: "Geld, das direkt an Bürger fließt." + (sector === "S13" ? " Aufgeteilt danach, welche staatliche Ebene es auszahlt." : ""),
+        }),
+        Object.assign(N("D632PAY", "Sachleistungen (z. B. Arzt-, Klinik- und Pflegeleistungen der Kassen)", g("D632PAY"), byLevel(S, "D632PAY", year, sector, LEVEL_D632)), {
+          desc: "Leistungen, die Bürger erhalten und der Staat direkt beim Anbieter bezahlt." + (sector === "S13" ? " Aufgeteilt danach, welche staatliche Ebene sie bezahlt." : ""),
+        }),
+      ]),
+      { desc: "Leistungen an Bürger: als Geld (Renten, Arbeitslosengeld …) oder als bezahlte Sachleistung (Arztbehandlung, Pflege …). Nach Aufgaben (Alter, Krankheit, Familie …) zeigt sie die Ansicht „nach Aufgaben“ unter „Soziale Sicherung“." },
+    ),
     N("D1PAY", "Personal (Gehälter, Sozialbeiträge der Arbeitgeber)", g("D1PAY")),
     N("P2", "Sachaufwand (Vorleistungen)", g("P2")),
     N("inv", "Investitionen", g("P5") + g("NP")),
@@ -70,24 +97,39 @@ function treeArt(S, sector, year) {
   return { id: "root", label: "Ausgaben", value: TE, children: kids };
 }
 
-/** Expenditure by function (COFOG level I + II). */
+/** Expenditure by function: COFOG level I + II, and below that the economic type (Geldleistungen, Personal …). */
 function treeCofog(S, sector, year) {
   const i = S.years.indexOf(year);
   const c = S.cofog[sector];
   if (!c || i < 0 || c.TOTAL?.[i] == null) return null;
   const L = S.labels.cofog;
+  const A = S.cofogArt?.[sector] || {};
+  const artKids = (code, total) => {
+    const a = A[code];
+    if (!a) return [];
+    const kids = ART_ORDER.filter((k) => a[k]?.[i] != null).map((k) =>
+      Object.assign(N(code + ":" + k, ART_LABEL[k] || S.labels.cofogArt?.[k] || k, a[k][i]), ART_DESC[k] ? { desc: ART_DESC[k] } : {}),
+    );
+    if (!kids.length) return [];
+    const rest = total - kids.reduce((s, k) => s + k.value, 0);
+    if (Math.abs(rest) >= 0.5 && Math.abs(rest) >= Math.abs(total) * 0.001) kids.push(N(code + ":rest", "Sonstiges", rest));
+    return kids;
+  };
+  const node = (code, value, kids) => {
+    const n = N(code, COFOG_SHORT[code] || L[code] || code, value, kids);
+    if (COFOG_SHORT[code] && L[code] && L[code] !== n.label) n.title = "Offizielle Bezeichnung: " + L[code];
+    if (COFOG_DESC[code]) n.desc = COFOG_DESC[code];
+    return n;
+  };
   const top = Object.keys(c).filter((k) => /^GF\d\d$/.test(k));
-  const kids = top.map((k) =>
-    N(
-      k,
-      L[k] || k,
-      c[k][i] ?? 0,
-      Object.keys(c)
-        .filter((s) => s.length === 6 && s.startsWith(k))
-        .map((s) => Object.assign(N(s, L[s] || s, c[s][i]), { code: s.slice(2, 4) + "." + +s.slice(4) })),
-    ),
-  );
-  kids.forEach((k) => (k.code = k.id.slice(2)));
+  const kids = top.map((k) => {
+    const subs = Object.keys(c)
+      .filter((s) => s.length === 6 && s.startsWith(k) && c[s][i] != null)
+      .map((s) => Object.assign(node(s, c[s][i], artKids(s, c[s][i])), { code: s.slice(2, 4) + "." + +s.slice(4) }));
+    const n = node(k, c[k][i] ?? 0, subs.length > 1 ? subs : artKids(k, c[k][i] ?? 0));
+    n.code = k.slice(2);
+    return n;
+  });
   return { id: "root", label: "Ausgaben", value: c.TOTAL[i], children: kids };
 }
 

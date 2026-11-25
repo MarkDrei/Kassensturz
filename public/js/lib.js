@@ -402,7 +402,7 @@ export function resetColorMemo() {
 /**
  * Drill-down block.
  * cfg: {key, rootLabel, tree(year)->node|null, years (with data), year, unit, onYear, emptyText, maxDepth}
- * node: {id, label, code?, value (Mio EUR), hint?, children?}
+ * node: {id, label, code?, value (Mio EUR), hint?, title? (official name), desc? (explanation), children?}
  */
 export function drill(cfg) {
   const st = drillState.get(cfg.key) || { path: [], sel: null };
@@ -459,6 +459,8 @@ export function drill(cfg) {
     ),
   );
 
+  if (node.desc) wrap.append(h("p", { class: "desc" }, node.desc));
+
   const total = node.value;
   const posSum = kids.reduce((a, k) => a + Math.max(0, k.value), 0);
 
@@ -490,7 +492,7 @@ export function drill(cfg) {
         { class: (k.id === st.sel ? "sel " : "") + (k.value < 0 ? "neg" : "") },
         h(
           "button",
-          { type: "button", onclick: () => pick(k), title: (k.title ? k.title + " – " : "") + (canDrill ? "Details anzeigen" : "Entwicklung anzeigen") },
+          { type: "button", onclick: () => pick(k), title: [k.title, k.desc, canDrill ? "Klick: Details anzeigen" : "Klick: Entwicklung anzeigen"].filter(Boolean).join("\n\n") },
           h("span", { class: "sw", style: { background: color(k.id) } }),
           h("span", { class: "name" }, k.code ? h("span", { class: "code" }, k.code) : null, k.label),
           h("span", { class: "val" }, fmt(conv(k.value, cfg.year, cfg.unit), cfg.unit)),
@@ -511,7 +513,9 @@ export function drill(cfg) {
   const trendEl = h("div", { class: "chart trend" });
   const focus = sel || null;
   const trendTitle = focus ? focus.label : node.label;
-  wrap.append(h("h4", { class: "trend-title" }, "Entwicklung: ", trendTitle, h("span", { class: "muted" }, focus ? "" : " – nach Bestandteilen")), trendEl);
+  wrap.append(h("h4", { class: "trend-title" }, "Entwicklung: ", trendTitle, h("span", { class: "muted" }, focus ? "" : " – nach Bestandteilen")));
+  if (focus && (focus.desc || focus.title)) wrap.append(h("p", { class: "desc" }, [focus.desc, focus.title].filter(Boolean).join(" ")));
+  wrap.append(trendEl);
 
   requestAnimationFrame(() => {
     if (!donutEl.isConnected) return;
@@ -526,11 +530,19 @@ export function drill(cfg) {
         if (k) pick(k);
       },
     });
-    const ys = cfg.years;
-    const nodesByYear = ys.map((y) => {
+    let ys = cfg.years;
+    let nodesByYear = ys.map((y) => {
       const t = cfg.tree(y);
       return t && findNode(t, st.path);
     });
+    // a breakdown that only exists for recent years: start the trend where it begins
+    if (kids.length) {
+      const first = nodesByYear.findIndex((n) => n?.children?.length);
+      if (first > 0) {
+        ys = ys.slice(first);
+        nodesByYear = nodesByYear.slice(first);
+      }
+    }
     let series;
     if (focus) {
       series = [{ name: focus.label, color: color(focus.id), area: true, data: ys.map((y, i) => conv(nodesByYear[i]?.children?.find((c) => c.id === focus.id)?.value, y, cfg.unit)) }];
@@ -543,11 +555,11 @@ export function drill(cfg) {
         color: color(k.id),
         area: true,
         stack: "s",
-        data: ys.map((y, i) => conv(nodesByYear[i]?.children?.find((c) => c.id === k.id)?.value ?? (nodesByYear[i] ? 0 : null), y, cfg.unit)),
+        data: ys.map((y, i) => conv(nodesByYear[i]?.children?.find((c) => c.id === k.id)?.value ?? (nodesByYear[i]?.children ? 0 : null), y, cfg.unit)),
       }));
       const restData = ys.map((y, i) => {
         const nd = nodesByYear[i];
-        if (!nd) return null;
+        if (!nd?.children) return null;
         return conv((nd.children || []).filter((c) => !coloredIds.has(c.id)).reduce((a, c) => a + c.value, 0), y, cfg.unit);
       });
       if (restData.some((v) => v)) series.push({ name: "Weitere", color: theme().other, area: true, stack: "s", data: restData });
