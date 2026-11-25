@@ -28,6 +28,7 @@ python3 scripts/fetch_eurostat.py        # -> public/data/staat.json
 python3 scripts/fetch_bundeshaushalt.py  # -> public/data/bund.json (dauert einige Minuten)
 python3 scripts/fetch_sozialbudget.py    # -> public/data/sozial.json
 python3 scripts/fetch_vermoegen.py       # -> public/data/vermoegen.json
+python3 scripts/fetch_flucht.py          # -> public/data/flucht.json (PDF-Tabellen sind im Skript übertragen)
 ```
 Alle Quellen, Datensätze und Einschränkungen stehen in [SOURCES.md](SOURCES.md).
 

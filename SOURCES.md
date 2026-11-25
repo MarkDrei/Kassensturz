@@ -85,6 +85,23 @@ nicht live pro Anfrage abgerufen.
 - **Einordnung (keine amtliche Zahl):** DIW Wochenbericht 27/2017 schätzt bis zu 400 Mrd. € Erbschaften und
   Schenkungen pro Jahr (2012–2027).
 
+## `public/data/flucht.json` – Flucht und Asyl (Abschnitt in der Ansicht „Sozialstaat“)
+
+- **Skript:** `scripts/fetch_flucht.py`
+- **Abgerufen (HTML-Tabellen, Destatis):** Asylbewerberleistungen – Brutto-/Nettoausgaben 1994 ff. und Empfänger am 31.12.;
+  Schutzsuchende nach Schutzstatus am 31.12. (Ausländerzentralregister) 2007 ff. URLs im Skript und im JSON.
+- **Aus PDF-Tabellen übertragen** (im Skript, jeder Wert gegen den PDF-Text geprüft):
+  - BMF, „Flüchtlingsbezogene Ausgaben und Mindereinnahmen des Bundeshaushalts“, Ist in Mrd. €:
+    2016–2021 BT-Drs. 20/2845; 2022 Finanzplan BR-Drs. 321/23 (Tab. 6); 2023 BR-Drs. 351/24 (Tab. 6);
+    2024 BR-Drs. 351/25 (Tab. 8); 2025 und Planung 2026–2030 BT-Drs. 21/7301 (Tab. 11).
+    Je nach Ausgabe weichen Summen um 0,1 Mrd. ab; verwendet wird die erste Ist-Veröffentlichung.
+  - Statistik der BA (in Antworten der Bundesregierung): Jahressumme der Zahlungsansprüche im SGB II nach
+    Staatsangehörigkeit: 2010–2023 BT-Drs. 20/12225 (Anlage Tab. 2), 2024 BT-Drs. 21/1069, 2025 BT-Drs. 21/6855.
+- **Hinweise:** Die Reihen überschneiden sich (die Bundesausgaben „Sozialleistungen nach dem Asylverfahren“
+  enthalten Bürgergeld an Geflüchtete; die Entlastung der Länder finanziert u. a. Asylbewerberleistungen) und
+  dürfen nicht addiert werden. Für Kosten von Ländern und Kommunen gibt es keine amtliche Gesamtzahl.
+  Staatsangehörigkeit ≠ Fluchtstatus.
+
 ## Bundesländer einzeln (noch offen)
 
 Destatis GENESIS (Tabellen 713xx, Jahresrechnungs-/Kassenstatistik) braucht für den Abruf ein

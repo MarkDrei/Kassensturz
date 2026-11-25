@@ -48,8 +48,8 @@ function render() {
 
 async function boot() {
   try {
-    const [st, bu, so, ve] = await Promise.all(["data/staat.json", "data/bund.json", "data/sozial.json", "data/vermoegen.json"].map((u) => fetch(u).then((r) => (r.ok ? r.json() : Promise.reject(new Error(u))))));
-    data = { staat: st, bund: bu, sozial: so, vermoegen: ve };
+    const [st, bu, so, ve, fl] = await Promise.all(["data/staat.json", "data/bund.json", "data/sozial.json", "data/vermoegen.json", "data/flucht.json"].map((u) => fetch(u).then((r) => (r.ok ? r.json() : Promise.reject(new Error(u))))));
+    data = { staat: st, bund: bu, sozial: so, vermoegen: ve, flucht: fl };
     setBase(st);
     render();
   } catch (e) {

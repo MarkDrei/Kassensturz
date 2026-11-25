@@ -1,5 +1,5 @@
 // View "Sozialstaat": the BMAS Sozialbudget – social benefits by programme and by life situation (function).
-import { h, conv, fmt, pct, kpi, change, seg, yearPicker, unitPicker, field, drill, timeChart, theme, UNITS } from "../lib.js";
+import { h, conv, fmt, pct, nf, kpi, change, seg, yearPicker, unitPicker, field, drill, timeChart, theme, UNITS } from "../lib.js";
 
 export const title = "Sozialstaat";
 
@@ -168,11 +168,143 @@ export function render(root, { data, params, set }) {
     ),
   );
 
+  renderFlucht(root, data, year, unit, onYear);
+
   // ----- Quote over time
   const qEl = h("div", { class: "chart" });
   root.append(h("section", { class: "card" }, h("div", { class: "card-head" }, h("h2", {}, "Sozialleistungsquote")), h("p", { class: "sub" }, "Sozialbudget in % des Bruttoinlandsprodukts. Klick wählt das Jahr."), qEl));
   requestAnimationFrame(() => {
     const ys = years.filter((y) => conv(1, y, "bip") != null);
     timeChart(qEl, { years: ys, unit: "bip", year, onYear, series: [{ name: "Sozialleistungsquote", data: ys.map((y) => conv(tot[years.indexOf(y)], y, "bip")), color: theme().series[0], area: true }] });
+  });
+}
+
+/** Section "Flucht und Asyl": official cost figures and their size relative to the whole. */
+function renderFlucht(root, data, year, unit, onYear) {
+  const F = data.flucht;
+  const D = data.sozial;
+  const B = data.bund;
+  const t = theme();
+  const last = (arr) => arr[arr.length - 1];
+  const fb = F.bund,
+    fs = F.sgb2,
+    fa = F.asylblg,
+    fz = F.schutzsuchende;
+  // reference year: the selected year if every series has it, otherwise the latest common year
+  const common = fb.years.filter((y) => fs.years.includes(y) && fa.years.includes(y) && fz.years.includes(y));
+  const ry = common.includes(year) ? year : last(common);
+  const at = (o, key, y) => o[key][o.years.indexOf(y)];
+  const bundTot = at(fb, "total", ry);
+  const bundAbroad = fb.components[0].values[fb.years.indexOf(ry)];
+  const asylNet = fa.netto[fa.years.indexOf(ry)];
+  const si = fs.years.indexOf(ry);
+  const sgbRef = fs.values.asyl8[si] + fs.values.ukraine[si];
+  const sozTot = D.inst["0"][D.years.indexOf(ry)];
+  const bundAusg = B.years[ry]?.ist?.ausgaben.single.total ?? B.years[ry]?.soll?.ausgaben.single.total;
+  const schutz = fz.total[fz.years.indexOf(ry)];
+  const popI = data.staat.years.indexOf(ry);
+  const pop = data.staat.population[popI] * 1000;
+  const M = (v) => fmt(conv(v, ry, unit), unit);
+
+  const cmp = [
+    { label: "Sozialbudget insgesamt", v: sozTot, note: "alle Sozialleistungen" },
+    { label: "Gesetzliche Rentenversicherung", v: D.inst["11"][D.years.indexOf(ry)] },
+    { label: "Bürgergeld insgesamt (Zahlungsansprüche)", v: fs.total[si] },
+    { label: "Flüchtlingsbezogene Ausgaben des Bundes", v: bundTot, note: `davon ${M(bundAbroad)} Fluchtursachenbekämpfung im Ausland` },
+    { label: "Bürgergeld für Menschen aus Asylherkunftsländern und der Ukraine", v: sgbRef, note: "überschneidet sich mit der Bundeszeile" },
+    { label: "Asylbewerberleistungen (netto)", v: asylNet, note: "Länder und Kommunen" },
+  ];
+  const max = Math.max(...cmp.map((c) => c.v));
+
+  const bundEl = h("div", { class: "chart" });
+  const sgbEl = h("div", { class: "chart" });
+  const asylEl = h("div", { class: "chart" });
+  const schutzEl = h("div", { class: "chart" });
+  root.append(
+    h(
+      "section",
+      { class: "card", id: "flucht" },
+      h("div", { class: "card-head" }, h("h2", {}, "Flucht und Asyl: Was kostet das?")),
+      h(
+        "p",
+        { class: "sub" },
+        "Die amtlichen Zahlen dazu, eingeordnet in das Ganze. Es gibt keine einzelne Gesamtzahl: Bund, Länder und Kommunen tragen Kosten, und die Statistiken überschneiden sich teilweise – sie dürfen nicht einfach addiert werden.",
+      ),
+      h(
+        "div",
+        { class: "kpis" },
+        kpi("Flüchtlingsbezogene Ausgaben des Bundes", M(bundTot), `${ry}, ${bundAusg ? pct((bundTot / bundAusg) * 100) + " des Bundeshaushalts; " : ""}davon ${M(bundAbroad)} im Ausland`),
+        kpi("Asylbewerberleistungen", M(asylNet), `${ry}, netto · ${pct((asylNet / sozTot) * 100, 2)} des Sozialbudgets`),
+        kpi("Bürgergeld: Asylherkunftsländer + Ukraine", M(sgbRef), `${ry}, ${pct((sgbRef / fs.total[si]) * 100)} aller Bürgergeld-Zahlungsansprüche`),
+        kpi("Schutzsuchende in Deutschland", nf(schutz / 1e6, 2) + " Mio.", `Ende ${ry}, ${pct((schutz / pop) * 100)} der Bevölkerung`),
+      ),
+      h("h3", { class: "chart-title" }, `Größenordnungen ${ry} im Vergleich`),
+      h(
+        "ol",
+        { class: "cmplist" },
+        cmp.map((c) =>
+          h(
+            "li",
+            {},
+            h("span", { class: "name" }, c.label, c.note ? h("span", { class: "muted" }, " – " + c.note) : null),
+            h("span", { class: "val" }, M(c.v)),
+            h("span", { class: "bar" }, h("i", { style: { width: Math.max(0.3, (c.v / max) * 100) + "%" } })),
+          ),
+        ),
+      ),
+      h("h3", { class: "chart-title" }, "Flüchtlingsbezogene Ausgaben des Bundes"),
+      h("p", { class: "note" }, "Ist-Werte laut Bundesfinanzministerium (Finanzpläne bzw. Antwort der Bundesregierung). Gestrichelt: Planung " + fb.plan.note + ". Laut BMF lässt sich nicht in jedem Einzelfall genau abgrenzen, ob eine Leistung ausschließlich flüchtlingsbezogen ist."),
+      bundEl,
+      h("h3", { class: "chart-title" }, "Bürgergeld nach Staatsangehörigkeit"),
+      h(
+        "p",
+        { class: "note" },
+        "Jahressumme der Zahlungsansprüche (Regelbedarf, Unterkunftskosten u. a., ohne Verwaltung) laut Statistik der Bundesagentur für Arbeit. Asylherkunftsländer (Top 8): Afghanistan, Eritrea, Irak, Iran, Nigeria, Pakistan, Somalia, Syrien. Erfasst ist die Staatsangehörigkeit, nicht der Fluchtstatus. Ukrainische Geflüchtete erhalten seit Juni 2022 Bürgergeld statt Asylbewerberleistungen.",
+      ),
+      sgbEl,
+      h("div", { class: "grid2" }, h("div", {}, h("h3", { class: "chart-title" }, "Asylbewerberleistungen (netto)"), asylEl), h("div", {}, h("h3", { class: "chart-title" }, "Schutzsuchende nach Status (Tsd. Personen)"), schutzEl)),
+      h(
+        "p",
+        { class: "note" },
+        "Asylbewerberleistungen erhalten Asylsuchende während des Verfahrens sowie Geduldete; nach der Anerkennung wechseln sie in der Regel ins Bürgergeld (oder bei Erwerbsunfähigkeit in die Sozialhilfe). Kosten von Ländern und Kommunen über diese Leistungen hinaus (z. B. Unterbringung, Schulen, Kitas) werden nicht einheitlich erfasst; eine amtliche Gesamtzahl gibt es nicht.",
+      ),
+    ),
+  );
+
+  requestAnimationFrame(() => {
+    const allYears = [...fb.years, ...fb.plan.years];
+    const pad = (arr) => [...arr, ...fb.plan.years.map(() => null)];
+    timeChart(bundEl, {
+      years: allYears,
+      unit,
+      year: ry,
+      onYear,
+      series: [
+        ...fb.components.map((c, k) => ({ name: c.label, type: "bar", stack: "b", data: pad(fb.years.map((y, i) => conv(c.values[i], y, unit))), color: t.series[[6, 3, 2, 0, 4][k]] })),
+        { name: "Planung (gesamt)", data: [...fb.years.map((y, i) => (i === fb.years.length - 1 ? conv(fb.total[i], y, unit) : null)), ...fb.plan.years.map((y, i) => conv(fb.plan.total[i], y, unit))], color: t.ink2 || t.muted, dashed: true },
+      ],
+    });
+    timeChart(sgbEl, {
+      years: fs.years,
+      unit,
+      year: ry,
+      onYear,
+      total: true,
+      series: fs.groups.map((g, k) => ({ name: g.label, type: "bar", stack: "s", data: fs.years.map((y, i) => conv(fs.values[g.id][i], y, unit)), color: [t.series[0], t.series[3], t.series[1], t.other][k] })),
+    });
+    timeChart(asylEl, { years: fa.years, unit, year: ry, onYear, series: [{ name: "Nettoausgaben", type: "bar", data: fa.years.map((y, i) => conv(fa.netto[i], y, unit)), color: t.series[1] }] });
+    timeChart(schutzEl, {
+      years: fz.years,
+      unit: "n",
+      year: ry,
+      onYear,
+      total: true,
+      valueFmt: (v) => nf(v) + " Tsd.",
+      series: [
+        { name: "anerkannt", type: "bar", stack: "z", data: fz.anerkannt.map((v) => v / 1000), color: t.series[2] },
+        { name: "Verfahren offen", type: "bar", stack: "z", data: fz.offen.map((v) => v / 1000), color: t.series[3] },
+        { name: "abgelehnt", type: "bar", stack: "z", data: fz.abgelehnt.map((v) => (v == null ? null : v / 1000)), color: t.series[1] },
+      ],
+    });
   });
 }

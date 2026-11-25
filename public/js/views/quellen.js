@@ -8,6 +8,7 @@ export function render(root, { data }) {
   const b = data.bund.source;
   const so = data.sozial.source;
   const v = data.vermoegen.source;
+  const f = data.flucht.source;
   const a = (href, text) => h("a", { href, rel: "noopener" }, text);
   root.append(
     h("header", { class: "view-head" }, h("h1", {}, "Quellen und Methodik"), h("p", { class: "lead" }, "Alle Zahlen stammen aus amtlichen Quellen und werden regelmäßig neu abgerufen.")),
@@ -68,6 +69,19 @@ export function render(root, { data }) {
         h("li", {}, "Lebenslage × System (Tabelle III-2) für ", Object.keys(so.matrix).join(", "), " – je Jahr aus der neuesten Ausgabe, die das Jahr enthält."),
         h("li", {}, so.note),
         h("li", {}, "Das Sozialbudget ist mit der EU-Sozialschutzstatistik (ESSPROS) abgestimmt, aber nicht mit der Staatsfinanzstatistik der Ansicht „Gesamtstaat“: Es enthält auch Arbeitgeber- und private Systeme und gliedert anders."),
+      ),
+    ),
+    h(
+      "section",
+      { class: "card prose" },
+      h("h2", {}, "Flucht und Asyl"),
+      h(
+        "ul",
+        {},
+        h("li", {}, f.bund.name, ". ", f.bund.note, " Quelle je Jahr: ", Object.entries(f.bund.perYear).map(([y, s], i) => [i ? ", " : "", a(s.url, y)]), "."),
+        h("li", {}, f.sgb2.name, ". ", f.sgb2.note, " Quelle je Jahr: ", Object.entries(f.sgb2.perYear).map(([y, s], i) => [i ? ", " : "", a(s.url, y)]), "."),
+        h("li", {}, f.asylblg.name, ": ", a(f.asylblg.urls[0], "Ausgaben"), ", ", a(f.asylblg.urls[1], "Empfänger"), ". Abgerufen am ", f.asylblg.retrieved, "."),
+        h("li", {}, f.schutzsuchende.name, ": ", a(f.schutzsuchende.url, "Zeitreihe"), ". Abgerufen am ", f.schutzsuchende.retrieved, "."),
       ),
     ),
     h(
