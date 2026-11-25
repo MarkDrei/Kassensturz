@@ -173,10 +173,15 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 2px solid
 .ranklist .code { color: var(--text-muted); font-size: 12px; margin-right: 6px; font-variant-numeric: tabular-nums; }
 .ranklist .val { font-size: 14px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ranklist .share { font-size: 12px; color: var(--text-muted); text-align: right; font-variant-numeric: tabular-nums; }
-.ranklist .chev { color: var(--text-muted); font-size: 18px; line-height: 1; }
+.ranklist .chev { grid-row: 1; grid-column: 5; color: var(--text-muted); font-size: 18px; line-height: 1; }
 .ranklist .bar { grid-column: 2 / 5; height: 4px; background: var(--surface-2); border-radius: 2px; overflow: hidden; }
 .ranklist .bar i { display: block; height: 100%; border-radius: 2px; }
 .ranklist li.neg .val { color: var(--down); }
+.legend { display: flex; flex-wrap: wrap; gap: 2px 4px; margin: 4px 0 6px; }
+.legend button { display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; padding: 2px 6px; border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--text-secondary); text-align: left; }
+.legend button:hover { background: var(--surface-2); }
+.legend button[aria-pressed="false"] { opacity: 0.4; text-decoration: line-through; }
+.legend .sw { width: 10px; height: 10px; border-radius: 3px; flex: none; }
 .trend-title { font-size: 14px; margin: 24px 0 4px; font-weight: 600; }
 .chart.trend { height: 300px; }
 
@@ -199,6 +204,9 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 2px solid
   .ranklist li button { grid-template-columns: 10px 1fr auto 14px; }
   .ranklist .share { display: none; }
   .ranklist .bar { grid-column: 2 / 4; }
+  .ranklist .chev { grid-column: 4; }
+  .nav a { padding: 5px 7px; font-size: 13px; }
+  .nav { gap: 0; }
   .kpis { grid-template-columns: 1fr 1fr; }
   .kpi-value { font-size: 19px; }
   .top-inner { gap: 4px 16px; padding-top: 6px; padding-bottom: 6px; }

@@ -187,11 +187,9 @@ export function timeChart(el, { years, series, unit, year, onYear, refLines = []
   chart.setOption({
     animationDuration: 250,
     textStyle: { fontFamily: "inherit" },
-    grid: { left: 4, right: 12, top: series.length > 1 ? 40 : 14, bottom: 4, containLabel: true },
-    legend:
-      series.length > 1
-        ? { top: 0, left: 0, icon: "roundRect", itemWidth: 10, itemHeight: 10, itemGap: 14, textStyle: { color: t.ink2, fontSize: 12 }, type: "scroll" }
-        : undefined,
+    grid: { left: 4, right: 22, top: 14, bottom: 4, containLabel: true },
+    // ECharts legend stays hidden; an HTML legend (wraps, never truncates) drives it.
+    legend: series.length > 1 ? { show: false } : undefined,
     tooltip: {
       ...tooltipBase(t),
       trigger: "axis",
@@ -226,6 +224,32 @@ export function timeChart(el, { years, series, unit, year, onYear, refLines = []
     },
     series: out,
   });
+  if (series.length > 1) {
+    el.previousElementSibling?.classList.contains("legend") && el.previousElementSibling.remove();
+    el.before(
+      h(
+        "div",
+        { class: "legend" },
+        series.map((s) =>
+          h(
+            "button",
+            {
+              type: "button",
+              "aria-pressed": "true",
+              title: "Ein-/ausblenden",
+              onclick: (e) => {
+                const b = e.currentTarget;
+                b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true"));
+                chart.dispatchAction({ type: "legendToggleSelect", name: s.name });
+              },
+            },
+            h("span", { class: "sw", style: { background: s.signColors ? t.pos : s.color } }),
+            s.name,
+          ),
+        ),
+      ),
+    );
+  }
   if (onYear) {
     el.style.cursor = "pointer";
     chart.getZr().on("click", (e) => {
@@ -246,15 +270,18 @@ export function donut(el, { items, centerTop, centerBottom, unit, year, onClick 
   chart.setOption({
     animationDuration: 300,
     textStyle: { fontFamily: "inherit" },
-    title: {
-      text: centerTop,
-      subtext: centerBottom,
-      left: "center",
-      top: "center",
-      itemGap: 4,
-      textStyle: { color: t.ink, fontSize: 20, fontWeight: 600 },
-      subtextStyle: { color: t.ink2, fontSize: 12 },
-    },
+    graphic: [
+      {
+        type: "group",
+        left: "center",
+        top: "middle",
+        silent: true,
+        children: [
+          { type: "text", style: { text: centerTop, x: 0, y: 0, align: "center", verticalAlign: "bottom", fill: t.ink, fontSize: 20, fontWeight: 600, fontFamily: "system-ui, sans-serif" } },
+          { type: "text", style: { text: centerBottom, x: 0, y: 6, align: "center", verticalAlign: "top", fill: t.ink2, fontSize: 12, fontFamily: "system-ui, sans-serif" } },
+        ],
+      },
+    ],
     tooltip: {
       ...tooltipBase(t),
       trigger: "item",
