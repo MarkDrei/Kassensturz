@@ -4,9 +4,29 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Kassensturz</title>
+  <meta name="description" content="Wohin fließt das Geld von Bund, Ländern, Gemeinden und Sozialversicherung? Einnahmen, Ausgaben, Schulden und BIP Deutschlands interaktiv.">
+  <meta name="color-scheme" content="light dark">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/app.css">
+  <script src="vendor/echarts-5.6.0.min.js" defer></script>
+  <script type="module" src="js/app.js"></script>
 </head>
 <body>
-  <h1>Kassensturz</h1>
-  <p>Wohin fließt das Geld von Bund, Ländern und Gemeinden? Bald hier.</p>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="#/staat"><span class="logo" aria-hidden="true">€</span>Kassensturz</a>
+      <nav class="nav" aria-label="Ansichten">
+        <a href="#/staat" data-route="staat">Gesamtstaat</a>
+        <a href="#/bund" data-route="bund">Bundeshaushalt</a>
+        <a href="#/schulden" data-route="schulden">Schulden &amp; BIP</a>
+      </nav>
+    </div>
+  </header>
+  <main id="main" class="wrap">
+    <p class="empty">Daten werden geladen …</p>
+  </main>
+  <footer class="wrap foot">
+    <p>Daten: Eurostat / Destatis, Bundesministerium der Finanzen. <a href="#/quellen" data-route="quellen">Quellen und Methodik</a></p>
+  </footer>
 </body>
 </html>

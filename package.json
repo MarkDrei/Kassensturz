@@ -5,6 +5,7 @@
   "description": "Interaktive Übersicht der Staatsfinanzen in Deutschland (Bund, Länder, Gemeinden)",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "data": "python3 scripts/fetch_eurostat.py && python3 scripts/fetch_bundeshaushalt.py"
   }
 }
